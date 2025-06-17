@@ -1,0 +1,61 @@
+{% extends 'base.html' %}
+
+{% block title %}Admin Login - Athenea{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center align-items-center min-vh-100">
+    <div class="col-md-6">
+        <div class="card shadow">
+            <div class="card-body py-5">
+                <!-- Logo en el centro -->
+                <div class="text-center mb-5 logo-container">
+                    {% load static %}
+                    <img src="{% static 'img/logo/logo.png' %}" alt="Athenea Logo" class="img-fluid mb-3" style="max-height: 250px; object-fit: cover; object-position: top; display: block; margin: 0 auto;">
+                    <h4 class="text-warning">Acceso Administrativo</h4>
+                </div>
+                
+                <!-- Formulario de login -->
+                <form method="post">
+                    {% csrf_token %}
+                    
+                    <!-- Campo de usuario -->
+                    <div class="mb-4">
+                        <label for="{{ form.username.id_for_label }}" class="form-label">{{ form.username.label }}</label>
+                        {{ form.username }}
+                        {% if form.username.errors %}
+                            <div class="text-danger">
+                                {% for error in form.username.errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+                    
+                    <!-- Campo de contraseña -->
+                    <div class="mb-4">
+                        <label for="{{ form.password.id_for_label }}" class="form-label">{{ form.password.label }}</label>
+                        {{ form.password }}
+                        {% if form.password.errors %}
+                            <div class="text-danger">
+                                {% for error in form.password.errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+                    
+                    <!-- Botón de iniciar sesión -->
+                    <div class="d-grid gap-2 mt-5">
+                        <button type="submit" class="btn btn-warning btn-lg">Acceder como Administrador</button>
+                    </div>
+                </form>
+                
+                <!-- Enlace para volver al login normal -->
+                <div class="text-center mt-4">
+                    <a href="{% url 'login' %}" class="text-decoration-none">Volver al inicio de sesión normal</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

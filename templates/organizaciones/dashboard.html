@@ -1,0 +1,198 @@
+{% extends 'base.html' %}
+
+{% block title %}Dashboard - Athenea{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <!-- Sidebar / Menú lateral -->
+        <nav id="sidebar" class="col-md-3 col-lg-2 d-md-block sidebar collapse">
+            <div class="position-sticky pt-4">
+                <div class="text-center mb-4">
+                    {% load static %}
+                    <img src="{% static 'img/logo/logo.png' %}" alt="Athenea Logo" class="img-fluid mb-3" style="max-height: 140px; object-fit: cover; object-position: top; display: block; margin: 0 auto;">
+                    {% if request.user.logo %}
+                        <img src="{{ request.user.logo.url }}" alt="Logo" class="img-fluid rounded-circle mt-3" style="max-width: 80px;">
+                    {% else %}
+                        <div class="bg-dark text-warning rounded-circle d-flex align-items-center justify-content-center mx-auto mt-3" style="width: 80px; height: 80px; border: 2px solid #ffd700;">
+                            <h2>{{ request.user.nombre|first }}</h2>
+                        </div>
+                    {% endif %}
+                    <h5 class="mt-3 text-white">{{ request.user.nombre }}</h5>
+                </div>
+                
+                <ul class="nav flex-column">
+                    <li class="nav-item">
+                        <a class="nav-link active" href="#">
+                            <i class="fas fa-tachometer-alt"></i>
+                            Dashboard
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#">
+                            <i class="fas fa-users"></i>
+                            Usuarios
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#">
+                            <i class="fas fa-store"></i>
+                            Negocios
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#">
+                            <i class="fas fa-cog"></i>
+                            Configuración
+                        </a>
+                    </li>
+                    <li class="nav-item mt-5">
+                        <a class="nav-link" href="{% url 'logout' %}">
+                            <i class="fas fa-sign-out-alt"></i>
+                            Cerrar Sesión
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </nav>
+        
+        <!-- Contenido principal -->
+        <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4">
+            <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-4 pb-3 mb-4 border-bottom border-dark">
+                <h1 class="h2 text-white">Dashboard</h1>
+                <div class="btn-toolbar mb-2 mb-md-0">
+                    <button type="button" class="btn btn-sm btn-outline-warning">
+                        <i class="fas fa-calendar me-1"></i>
+                        Esta semana
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Tarjetas de resumen -->
+            <div class="row">
+                <div class="col-md-4 mb-4">
+                    <div class="card border-left-primary shadow h-100 py-2">
+                        <div class="card-body">
+                            <div class="row no-gutters align-items-center">
+                                <div class="col mr-2">
+                                    <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                                        Usuarios</div>
+                                    <div class="h5 mb-0 font-weight-bold">0</div>
+                                </div>
+                                <div class="col-auto">
+                                    <i class="fas fa-users fa-2x text-warning"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-md-4 mb-4">
+                    <div class="card border-left-success shadow h-100 py-2">
+                        <div class="card-body">
+                            <div class="row no-gutters align-items-center">
+                                <div class="col mr-2">
+                                    <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
+                                        Negocios</div>
+                                    <div class="h5 mb-0 font-weight-bold">0</div>
+                                </div>
+                                <div class="col-auto">
+                                    <i class="fas fa-store fa-2x text-white"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-md-4 mb-4">
+                    <div class="card border-left-info shadow h-100 py-2">
+                        <div class="card-body">
+                            <div class="row no-gutters align-items-center">
+                                <div class="col mr-2">
+                                    <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
+                                        Actividad</div>
+                                    <div class="row no-gutters align-items-center">
+                                        <div class="col-auto">
+                                            <div class="h5 mb-0 mr-3 font-weight-bold">50%</div>
+                                        </div>
+                                        <div class="col">
+                                            <div class="progress progress-sm mr-2" style="height: 8px; background-color: #2d2d2d;">
+                                                <div class="progress-bar bg-warning" role="progressbar" style="width: 50%"
+                                                    aria-valuenow="50" aria-valuemin="0" aria-valuemax="100"></div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-auto">
+                                    <i class="fas fa-clipboard-list fa-2x text-warning"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Contenido del dashboard -->
+            <div class="row">
+                <div class="col-12">
+                    <div class="card shadow mb-4">
+                        <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                            <h6 class="m-0 font-weight-bold text-primary">Bienvenido a Athenea</h6>
+                        </div>
+                        <div class="card-body">
+                            <p>Este es el panel de administración de tu organización. Aquí podrás gestionar usuarios, negocios y configuraciones.</p>
+                            <p>Para comenzar, puedes crear usuarios para tu organización desde la sección de Usuarios.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Estilos para el sidebar */
+    .sidebar {
+        position: fixed;
+        top: 0;
+        bottom: 0;
+        left: 0;
+        z-index: 100;
+        padding: 48px 0 0;
+        box-shadow: inset -1px 0 0 rgba(0, 0, 0, .1);
+    }
+    
+    .sidebar-sticky {
+        position: relative;
+        top: 0;
+        height: calc(100vh - 48px);
+        padding-top: .5rem;
+        overflow-x: hidden;
+        overflow-y: auto;
+    }
+    
+    .nav-link {
+        font-weight: 500;
+        color: #333;
+    }
+    
+    .nav-link.active {
+        color: #007bff;
+    }
+    
+    /* Estilos para las tarjetas */
+    .border-left-primary {
+        border-left: .25rem solid #4e73df !important;
+    }
+    
+    .border-left-success {
+        border-left: .25rem solid #1cc88a !important;
+    }
+    
+    .border-left-info {
+        border-left: .25rem solid #36b9cc !important;
+    }
+</style>
+{% endblock %}
