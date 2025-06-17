@@ -37,15 +37,19 @@ python manage.py makemigrations
 python manage.py migrate
 ```
 
-4. Crear un superusuario:
+4. Crear el superusuario:
 ```
-python manage.py createsuperuser
+python create_superuser.py
 ```
 
 5. Ejecutar el servidor de desarrollo:
 ```
 python manage.py runserver
 ```
+
+## Superusuario
+
+El sistema incluye un superusuario predefinido. Las credenciales se proporcionan por separado por motivos de seguridad.
 
 ## Estructura del Proyecto
 
