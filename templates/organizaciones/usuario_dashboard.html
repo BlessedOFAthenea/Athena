@@ -1,6 +1,6 @@
 {% extends 'base.html' %}
 
-{% block title %}Dashboard - Athenea{% endblock %}
+{% block title %}Dashboard de Usuario - {{ organizacion.nombre }}{% endblock %}
 
 {% block content %}
 <div class="container-fluid">
@@ -10,20 +10,17 @@
             <div class="position-sticky pt-4">
                 <div class="text-center mb-4">
                     {% load static %}
-                    <img src="{% static 'img/logo/logo.png' %}" alt="Athenea Logo" class="img-fluid mb-3" style="max-height: 140px; object-fit: cover; object-position: top; display: block; margin: 0 auto;">
-                    {% if request.user.logo %}
-                        <img src="{{ request.user.logo.url }}" alt="Logo" class="img-fluid rounded-circle mt-3" style="max-width: 80px;">
+                    <img src="{% static 'img/logo/logo.png' %}" alt="Athenea Logo" class="img-fluid mb-3" style="max-height: 80px; object-fit: cover; object-position: top; display: block; margin: 0 auto;">
+                    
+                    {% if organizacion.logo %}
+                        <img src="{{ organizacion.logo.url }}" alt="Logo" class="img-fluid rounded-circle mt-3" style="max-width: 60px;">
                     {% else %}
-                        <div class="bg-dark text-warning rounded-circle d-flex align-items-center justify-content-center mx-auto mt-3" style="width: 80px; height: 80px; border: 2px solid #ffd700;">
-                            <h2>{{ request.user.nombre|first }}</h2>
+                        <div class="bg-dark text-warning rounded-circle d-flex align-items-center justify-content-center mx-auto mt-3" style="width: 60px; height: 60px; border: 2px solid #ffd700;">
+                            <h4>{{ organizacion.nombre|first }}</h4>
                         </div>
                     {% endif %}
-                    <h5 class="mt-3 text-white">{{ request.user.nombre }}</h5>
-                    {% if usuario %}
-                        <div class="mt-2 p-2 bg-dark rounded">
-                            <small class="text-warning">Usuario: {{ usuario.nombre }} {{ usuario.apellido }}</small>
-                        </div>
-                    {% endif %}
+                    <h6 class="mt-2 text-white">{{ usuario.nombre }} {{ usuario.apellido }}</h6>
+                    <small class="text-white-50">{{ organizacion.nombre }}</small>
                 </div>
                 
                 <ul class="nav flex-column">
@@ -35,24 +32,24 @@
                     </li>
                     <li class="nav-item">
                         <a class="nav-link" href="#">
-                            <i class="fas fa-users"></i>
-                            Usuarios
+                            <i class="fas fa-store"></i>
+                            Mis Negocios
                         </a>
                     </li>
                     <li class="nav-item">
                         <a class="nav-link" href="#">
-                            <i class="fas fa-store"></i>
-                            Negocios
+                            <i class="fas fa-chart-bar"></i>
+                            Reportes
                         </a>
                     </li>
                     <li class="nav-item">
                         <a class="nav-link" href="#">
                             <i class="fas fa-cog"></i>
-                            Configuración
+                            Mi Perfil
                         </a>
                     </li>
                     <li class="nav-item mt-5">
-                        <a class="nav-link" href="{% url 'logout' %}">
+                        <a class="nav-link" href="{% url 'usuario_logout' %}">
                             <i class="fas fa-sign-out-alt"></i>
                             Cerrar Sesión
                         </a>
@@ -64,7 +61,7 @@
         <!-- Contenido principal -->
         <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4">
             <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-4 pb-3 mb-4 border-bottom border-dark">
-                <h1 class="h2 text-white">Dashboard</h1>
+                <h1 class="h2 text-white">Dashboard de Usuario</h1>
                 <div class="btn-toolbar mb-2 mb-md-0">
                     <button type="button" class="btn btn-sm btn-outline-warning">
                         <i class="fas fa-calendar me-1"></i>
@@ -81,11 +78,11 @@
                             <div class="row no-gutters align-items-center">
                                 <div class="col mr-2">
                                     <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
-                                        Usuarios</div>
+                                        Mis Negocios</div>
                                     <div class="h5 mb-0 font-weight-bold">0</div>
                                 </div>
                                 <div class="col-auto">
-                                    <i class="fas fa-users fa-2x text-warning"></i>
+                                    <i class="fas fa-store fa-2x text-warning"></i>
                                 </div>
                             </div>
                         </div>
@@ -98,11 +95,11 @@
                             <div class="row no-gutters align-items-center">
                                 <div class="col mr-2">
                                     <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
-                                        Negocios</div>
-                                    <div class="h5 mb-0 font-weight-bold">0</div>
+                                        Ventas</div>
+                                    <div class="h5 mb-0 font-weight-bold">$0</div>
                                 </div>
                                 <div class="col-auto">
-                                    <i class="fas fa-store fa-2x text-white"></i>
+                                    <i class="fas fa-dollar-sign fa-2x text-white"></i>
                                 </div>
                             </div>
                         </div>
@@ -142,82 +139,16 @@
                 <div class="col-12">
                     <div class="card shadow mb-4">
                         <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
-                            <h6 class="m-0 font-weight-bold text-primary">Bienvenido a Athenea</h6>
+                            <h6 class="m-0 font-weight-bold text-primary">Bienvenido, {{ usuario.nombre }}</h6>
                         </div>
                         <div class="card-body">
-                            <p>Este es el panel de administración de tu organización. Aquí podrás gestionar usuarios, negocios y configuraciones.</p>
-                            <p>Para comenzar, puedes crear usuarios para tu organización desde la sección de Usuarios.</p>
-                            
-                            <div class="mt-4">
-                                <h6 class="font-weight-bold">Acceso para usuarios de tu organización:</h6>
-                                <p>Tus usuarios pueden acceder a través del siguiente enlace:</p>
-                                <div class="input-group">
-                                    <input type="text" class="form-control" value="{{ request.scheme }}://{{ request.get_host }}{% url 'usuario_login' request.user.id %}" id="usuario-login-url" readonly>
-                                    <button class="btn btn-outline-warning" type="button" onclick="copyToClipboard()">Copiar</button>
-                                </div>
-                                <small class="text-white-50">Comparte este enlace con los usuarios de tu organización.</small>
-                            </div>
+                            <p>Este es tu panel de usuario en {{ organizacion.nombre }}. Aquí podrás gestionar tus negocios y ver tus estadísticas.</p>
+                            <p>Para comenzar, puedes crear un nuevo negocio desde la sección de Mis Negocios.</p>
                         </div>
-                        
-<script>
-function copyToClipboard() {
-    var copyText = document.getElementById("usuario-login-url");
-    copyText.select();
-    copyText.setSelectionRange(0, 99999);
-    document.execCommand("copy");
-    alert("Enlace copiado al portapapeles");
-}
-</script>
                     </div>
                 </div>
             </div>
         </main>
     </div>
 </div>
-{% endblock %}
-
-{% block extra_css %}
-<style>
-    /* Estilos para el sidebar */
-    .sidebar {
-        position: fixed;
-        top: 0;
-        bottom: 0;
-        left: 0;
-        z-index: 100;
-        padding: 48px 0 0;
-        box-shadow: inset -1px 0 0 rgba(0, 0, 0, .1);
-    }
-    
-    .sidebar-sticky {
-        position: relative;
-        top: 0;
-        height: calc(100vh - 48px);
-        padding-top: .5rem;
-        overflow-x: hidden;
-        overflow-y: auto;
-    }
-    
-    .nav-link {
-        font-weight: 500;
-        color: #333;
-    }
-    
-    .nav-link.active {
-        color: #007bff;
-    }
-    
-    /* Estilos para las tarjetas */
-    .border-left-primary {
-        border-left: .25rem solid #4e73df !important;
-    }
-    
-    .border-left-success {
-        border-left: .25rem solid #1cc88a !important;
-    }
-    
-    .border-left-info {
-        border-left: .25rem solid #36b9cc !important;
-    }
-</style>
 {% endblock %}

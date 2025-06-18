@@ -12,6 +12,12 @@ urlpatterns = [
     # URL para el logout
     path('logout/', views.OrganizacionLogoutView.as_view(), name='logout'),
     
+    # URLs para usuarios internos
+    path('organizacion/<int:org_id>/login/', views.UsuarioLoginView.as_view(), name='usuario_login'),
+    path('organizacion/<int:org_id>/usuario-login/', views.UsuarioLoginPaso2View.as_view(), name='usuario_login_paso2'),
+    path('usuario/dashboard/', views.usuario_dashboard, name='usuario_dashboard'),
+    path('usuario/logout/', views.usuario_logout, name='usuario_logout'),
+    
     # URLs para la recuperación de contraseña
     path('password-reset/', views.OrganizacionPasswordResetView.as_view(), name='password_reset'),
     path('password-reset/done/', 

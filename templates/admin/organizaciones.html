@@ -1,0 +1,125 @@
+{% extends 'admin/base.html' %}
+
+{% block title %}Organizaciones - Panel de Administración{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2 text-white">Organizaciones</h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <button type="button" id="toggleSidebar" class="btn btn-sm btn-outline-warning me-2">
+            <i class="fas fa-bars"></i> Toggle Sidebar
+        </button>
+        <div class="btn-group me-2">
+            <button type="button" class="btn btn-sm btn-outline-warning">Exportar</button>
+        </div>
+        <button type="button" class="btn btn-warning">
+            <i class="fas fa-plus"></i> Nueva Organización
+        </button>
+    </div>
+</div>
+
+<!-- Filtros -->
+<div class="row mb-4">
+    <div class="col-md-12">
+        <div class="card shadow">
+            <div class="card-body">
+                <form class="row g-3">
+                    <div class="col-md-4">
+                        <label for="nombre" class="form-label">Nombre</label>
+                        <input type="text" class="form-control" id="nombre" placeholder="Buscar por nombre">
+                    </div>
+                    <div class="col-md-4">
+                        <label for="email" class="form-label">Email</label>
+                        <input type="email" class="form-control" id="email" placeholder="Buscar por email">
+                    </div>
+                    <div class="col-md-2">
+                        <label for="estado" class="form-label">Estado</label>
+                        <select class="form-select" id="estado">
+                            <option value="">Todos</option>
+                            <option value="1">Activos</option>
+                            <option value="0">Inactivos</option>
+                        </select>
+                    </div>
+                    <div class="col-md-2 d-flex align-items-end">
+                        <button type="submit" class="btn btn-primary w-100">Filtrar</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Tabla de organizaciones -->
+<div class="card shadow mb-4">
+    <div class="card-header py-3">
+        <h6 class="m-0 font-weight-bold text-primary">Listado de Organizaciones</h6>
+    </div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-dark table-striped table-hover">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Nombre</th>
+                        <th>Email</th>
+                        <th>Usuarios</th>
+                        <th>Fecha Registro</th>
+                        <th>Estado</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for org in organizaciones %}
+                    <tr>
+                        <td>{{ org.id }}</td>
+                        <td>{{ org.nombre }}</td>
+                        <td>{{ org.email }}</td>
+                        <td>{{ org.usuarios.count }}</td>
+                        <td>{{ org.fecha_registro|date:"d/m/Y H:i" }}</td>
+                        <td>
+                            {% if org.activo %}
+                            <span class="badge bg-success">Activo</span>
+                            {% else %}
+                            <span class="badge bg-danger">Inactivo</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <div class="btn-group">
+                                <button type="button" class="btn btn-sm btn-outline-warning">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                                <button type="button" class="btn btn-sm btn-outline-danger">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                                <button type="button" class="btn btn-sm btn-outline-info">
+                                    <i class="fas fa-eye"></i>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="7" class="text-center">No hay organizaciones registradas</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        
+        <!-- Paginación -->
+        <nav aria-label="Paginación de organizaciones">
+            <ul class="pagination justify-content-center mt-4">
+                <li class="page-item disabled">
+                    <a class="page-link" href="#" tabindex="-1" aria-disabled="true">Anterior</a>
+                </li>
+                <li class="page-item active"><a class="page-link" href="#">1</a></li>
+                <li class="page-item"><a class="page-link" href="#">2</a></li>
+                <li class="page-item"><a class="page-link" href="#">3</a></li>
+                <li class="page-item">
+                    <a class="page-link" href="#">Siguiente</a>
+                </li>
+            </ul>
+        </nav>
+    </div>
+</div>
+{% endblock %}

@@ -45,7 +45,10 @@ class OrganizacionLoginView(View):
                     request.session.set_expiry(0)
                 
                 login(request, organizacion)
-                return redirect('dashboard')  # Redirigir al dashboard después del login
+                # Guardar la organización en la sesión para el segundo paso de autenticación
+                request.session['org_authenticated'] = True
+                # Redirigir a la página de login de usuarios internos
+                return redirect('usuario_login_paso2', org_id=organizacion.id)
         
         # Si el formulario no es válido o la autenticación falla
         return render(request, self.template_name, {'form': form})
@@ -58,6 +61,18 @@ class OrganizacionLogoutView(View):
         """
         Maneja las solicitudes GET para cerrar sesión.
         """
+        # Limpiar todas las variables de sesión
+        if 'org_authenticated' in request.session:
+            del request.session['org_authenticated']
+        if 'usuario_autenticado' in request.session:
+            del request.session['usuario_autenticado']
+        if 'usuario_id' in request.session:
+            del request.session['usuario_id']
+        if 'usuario_nombre' in request.session:
+            del request.session['usuario_nombre']
+        if 'organizacion_id' in request.session:
+            del request.session['organizacion_id']
+            
         logout(request)
         return redirect('login')  # Redirigir al login después de cerrar sesión
 
@@ -74,8 +89,173 @@ def dashboard(request):
     """
     Vista para el dashboard de la organización.
     """
-    # Aquí se mostrará el dashboard después del login
-    return render(request, 'organizaciones/dashboard.html')
+    # Verificar que la organización esté autenticada
+    if not request.user.is_authenticated:
+        return redirect('login')
+    
+    # Verificar que el usuario interno también esté autenticado
+    if not request.session.get('usuario_autenticado'):
+        return redirect('usuario_login_paso2', org_id=request.user.id)
+    
+    # Obtener información del usuario interno
+    usuario_id = request.session.get('usuario_id')
+    try:
+        usuario = request.user.usuarios.get(id=usuario_id)
+    except:
+        # Si no se encuentra el usuario, redirigir al login de usuario
+        if 'usuario_autenticado' in request.session:
+            del request.session['usuario_autenticado']
+        if 'usuario_id' in request.session:
+            del request.session['usuario_id']
+        if 'usuario_nombre' in request.session:
+            del request.session['usuario_nombre']
+        return redirect('usuario_login_paso2', org_id=request.user.id)
+    
+    # Mostrar el dashboard con información del usuario y la organización
+    return render(request, 'organizaciones/dashboard.html', {'usuario': usuario})
+
+class UsuarioLoginView(View):
+    """
+    Vista para el inicio de sesión de usuarios internos de una organización (acceso externo).
+    """
+    template_name = 'organizaciones/usuario_login.html'
+    
+    def get(self, request, org_id):
+        """
+        Maneja las solicitudes GET mostrando el formulario de login.
+        """
+        try:
+            organizacion = Organizacion.objects.get(id=org_id)
+            return render(request, self.template_name, {'organizacion': organizacion})
+        except Organizacion.DoesNotExist:
+            return redirect('login')
+    
+    def post(self, request, org_id):
+        """
+        Maneja las solicitudes POST procesando el formulario de login.
+        """
+        email = request.POST.get('email')
+        password = request.POST.get('password')
+        
+        try:
+            organizacion = Organizacion.objects.get(id=org_id)
+            try:
+                usuario = organizacion.usuarios.get(email=email, activo=True)
+                # Verificar contraseña (en un sistema real usaríamos hash)
+                if usuario.password == password:
+                    # Guardar información del usuario en la sesión
+                    request.session['usuario_id'] = usuario.id
+                    request.session['usuario_nombre'] = f"{usuario.nombre} {usuario.apellido}"
+                    request.session['organizacion_id'] = org_id
+                    return redirect('usuario_dashboard')
+            except:
+                pass
+            
+            # Si la autenticación falla
+            return render(request, self.template_name, {
+                'organizacion': organizacion,
+                'error': 'Credenciales inválidas'
+            })
+        except Organizacion.DoesNotExist:
+            return redirect('login')
+
+class UsuarioLoginPaso2View(View):
+    """
+    Vista para el segundo paso de autenticación después del login de organización.
+    """
+    template_name = 'organizaciones/usuario_login_paso2.html'
+    
+    def get(self, request, org_id):
+        """
+        Maneja las solicitudes GET mostrando el formulario de login de usuario.
+        """
+        # Verificar que la organización esté autenticada
+        if not request.user.is_authenticated or not request.session.get('org_authenticated'):
+            return redirect('login')
+        
+        # Verificar que el usuario autenticado sea la organización correcta
+        if request.user.id != org_id:
+            logout(request)
+            return redirect('login')
+        
+        return render(request, self.template_name, {'organizacion': request.user})
+    
+    def post(self, request, org_id):
+        """
+        Maneja las solicitudes POST procesando el formulario de login de usuario.
+        """
+        # Verificar que la organización esté autenticada
+        if not request.user.is_authenticated or not request.session.get('org_authenticated'):
+            return redirect('login')
+        
+        # Verificar que el usuario autenticado sea la organización correcta
+        if request.user.id != org_id:
+            logout(request)
+            return redirect('login')
+        
+        email = request.POST.get('email')
+        password = request.POST.get('password')
+        
+        try:
+            usuario = request.user.usuarios.get(email=email, activo=True)
+            # Verificar contraseña (en un sistema real usaríamos hash)
+            if usuario.password == password:
+                # Guardar información del usuario en la sesión
+                request.session['usuario_id'] = usuario.id
+                request.session['usuario_nombre'] = f"{usuario.nombre} {usuario.apellido}"
+                request.session['organizacion_id'] = org_id
+                # Marcar que el usuario interno está autenticado
+                request.session['usuario_autenticado'] = True
+                return redirect('dashboard')
+        except:
+            pass
+        
+        # Si la autenticación falla
+        return render(request, self.template_name, {
+            'organizacion': request.user,
+            'error': 'Credenciales inválidas'
+        })
+
+def usuario_dashboard(request):
+    """
+    Vista para el dashboard de usuarios internos.
+    """
+    # Verificar si el usuario está autenticado
+    if 'usuario_id' not in request.session:
+        return redirect('login')
+    
+    # Obtener información del usuario y la organización
+    usuario_id = request.session['usuario_id']
+    org_id = request.session['organizacion_id']
+    
+    try:
+        organizacion = Organizacion.objects.get(id=org_id)
+        usuario = organizacion.usuarios.get(id=usuario_id)
+        return render(request, 'organizaciones/usuario_dashboard.html', {
+            'usuario': usuario,
+            'organizacion': organizacion
+        })
+    except:
+        # Si hay algún error, cerrar sesión
+        if 'usuario_id' in request.session:
+            del request.session['usuario_id']
+        if 'usuario_nombre' in request.session:
+            del request.session['usuario_nombre']
+        if 'organizacion_id' in request.session:
+            del request.session['organizacion_id']
+        return redirect('login')
+
+def usuario_logout(request):
+    """
+    Vista para cerrar sesión de usuarios internos.
+    """
+    if 'usuario_id' in request.session:
+        del request.session['usuario_id']
+    if 'usuario_nombre' in request.session:
+        del request.session['usuario_nombre']
+    if 'organizacion_id' in request.session:
+        del request.session['organizacion_id']
+    return redirect('login')
 
 class SuperUserLoginView(LoginView):
     """
@@ -86,9 +266,9 @@ class SuperUserLoginView(LoginView):
     
     def get_success_url(self):
         """
-        Redirige al admin después del login exitoso.
+        Redirige al panel personalizado después del login exitoso.
         """
-        return '/admin/'
+        return '/panel/'
     
     def dispatch(self, request, *args, **kwargs):
         """

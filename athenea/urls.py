@@ -21,8 +21,9 @@ from django.conf import settings
 from django.conf.urls.static import static
 
 urlpatterns = [
-    path("admin/", admin.site.urls),
-    path("", include("organizaciones.urls")),  # Incluir las URLs de la aplicación organizaciones
+    path("admin/", admin.site.urls),  # Panel de administración de Django
+    path("", include("organizaciones.urls")),  # URLs de la aplicación organizaciones
+    path("panel/", include("organizaciones.admin_urls")),  # Panel personalizado para superusuarios
 ]
 
 # Configuración para servir archivos media en desarrollo

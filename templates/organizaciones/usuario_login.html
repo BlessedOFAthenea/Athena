@@ -1,0 +1,58 @@
+{% extends 'base.html' %}
+
+{% block title %}Acceso de Usuario - {{ organizacion.nombre }}{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center align-items-center min-vh-100">
+    <div class="col-md-6">
+        <div class="card shadow">
+            <div class="card-body py-5">
+                <!-- Logo de la organización -->
+                <div class="text-center mb-5 logo-container">
+                    {% if organizacion.logo %}
+                        <img src="{{ organizacion.logo.url }}" alt="{{ organizacion.nombre }}" class="img-fluid mb-3" style="max-height: 150px;">
+                    {% else %}
+                        <div class="bg-dark text-warning rounded-circle d-flex align-items-center justify-content-center mx-auto" style="width: 100px; height: 100px; border: 2px solid #ffd700;">
+                            <h2>{{ organizacion.nombre|first }}</h2>
+                        </div>
+                    {% endif %}
+                    <h4 class="text-white">{{ organizacion.nombre }}</h4>
+                    <p class="text-white-50">Acceso de Usuario</p>
+                </div>
+                
+                <!-- Mensaje de error -->
+                {% if error %}
+                    <div class="alert alert-danger">{{ error }}</div>
+                {% endif %}
+                
+                <!-- Formulario de login -->
+                <form method="post">
+                    {% csrf_token %}
+                    
+                    <!-- Campo de email -->
+                    <div class="mb-4">
+                        <label for="email" class="form-label text-white">Correo Electrónico</label>
+                        <input type="email" name="email" id="email" class="form-control text-white" placeholder="Correo electrónico" required>
+                    </div>
+                    
+                    <!-- Campo de contraseña -->
+                    <div class="mb-4">
+                        <label for="password" class="form-label text-white">Contraseña</label>
+                        <input type="password" name="password" id="password" class="form-control text-white" placeholder="Contraseña" required>
+                    </div>
+                    
+                    <!-- Botón de iniciar sesión -->
+                    <div class="d-grid gap-2 mt-4">
+                        <button type="submit" class="btn btn-primary btn-lg">Iniciar Sesión</button>
+                    </div>
+                </form>
+                
+                <!-- Enlace para volver al login de organización -->
+                <div class="text-center mt-4">
+                    <a href="{% url 'login' %}" class="text-decoration-none">Volver al inicio de sesión de organización</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

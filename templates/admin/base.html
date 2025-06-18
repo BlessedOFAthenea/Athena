@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Panel de Administración - Athenea{% endblock %}</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome para iconos -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <!-- Google Fonts - Poppins -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- CSS personalizado -->
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'css/styles.css' %}">
+    <style>
+        /* Estilos específicos para el panel de administración */
+        .sidebar {
+            position: fixed;
+            top: 0;
+            bottom: 0;
+            left: 0;
+            z-index: 100;
+            padding: 48px 0 0;
+            box-shadow: inset -1px 0 0 rgba(0, 0, 0, .1);
+            transition: all 0.3s;
+        }
+        
+        .sidebar-sticky {
+            position: relative;
+            top: 0;
+            height: calc(100vh - 48px);
+            padding-top: 0.5rem;
+            overflow-x: hidden;
+            overflow-y: auto;
+        }
+        
+        .sidebar-heading {
+            font-size: .75rem;
+            text-transform: uppercase;
+            color: #ffd700;
+            padding: 0.5rem 1rem;
+            margin-bottom: 0.5rem;
+        }
+        
+        main {
+            padding-top: 48px;
+        }
+        
+        .navbar-brand {
+            padding-top: 0.75rem;
+            padding-bottom: 0.75rem;
+            font-size: 1rem;
+            background-color: rgba(0, 0, 0, .25);
+            box-shadow: inset -1px 0 0 rgba(0, 0, 0, .25);
+        }
+        
+        .navbar .navbar-toggler {
+            top: 0.25rem;
+            right: 1rem;
+        }
+        
+        .sidebar .nav-link {
+            font-weight: 500;
+            color: #ffffff;
+            padding: 0.5rem 1rem;
+            margin-bottom: 0.2rem;
+            border-radius: 0.25rem;
+        }
+        
+        .sidebar .nav-link:hover {
+            background-color: rgba(255, 215, 0, 0.1);
+            color: #ffd700;
+        }
+        
+        .sidebar .nav-link.active {
+            background-color: rgba(255, 215, 0, 0.2);
+            color: #ffd700;
+        }
+        
+        .sidebar .nav-link i {
+            margin-right: 0.5rem;
+            color: #ffd700;
+        }
+        
+        .sidebar-collapsed {
+            margin-left: -250px;
+        }
+        
+        @media (max-width: 767.98px) {
+            .sidebar {
+                margin-left: -250px;
+            }
+            
+            .sidebar.show {
+                margin-left: 0;
+            }
+            
+            main {
+                margin-left: 0 !important;
+            }
+        }
+    </style>
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+    <nav class="navbar navbar-dark sticky-top bg-dark flex-md-nowrap p-0 shadow">
+        <a class="navbar-brand col-md-3 col-lg-2 me-0 px-3" href="{% url 'admin_dashboard' %}">
+            <i class="fas fa-shield-alt"></i> Athenea Admin
+        </a>
+        <button class="navbar-toggler d-md-none collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#sidebarMenu" aria-controls="sidebarMenu" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="w-100"></div>
+        <div class="navbar-nav">
+            <div class="nav-item text-nowrap">
+                <a class="nav-link px-3" href="{% url 'logout' %}">
+                    <i class="fas fa-sign-out-alt"></i> Cerrar sesión
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container-fluid">
+        <div class="row">
+            <!-- Sidebar -->
+            <nav id="sidebarMenu" class="col-md-3 col-lg-2 d-md-block sidebar collapse">
+                <div class="sidebar-sticky pt-3">
+                    <div class="text-center mb-4">
+                        {% load static %}
+                        <img src="{% static 'img/logo/logo.png' %}" alt="Athenea Logo" class="img-fluid mb-3" style="max-height: 80px; object-fit: cover; object-position: top; display: block; margin: 0 auto;">
+                        <h6 class="text-white">Superusuario</h6>
+                        <small class="text-white-50">{{ request.user.email }}</small>
+                    </div>
+                    
+                    <h6 class="sidebar-heading">Principal</h6>
+                    <ul class="nav flex-column">
+                        <li class="nav-item">
+                            <a class="nav-link {% if request.path == '/panel/' %}active{% endif %}" href="{% url 'admin_dashboard' %}">
+                                <i class="fas fa-tachometer-alt"></i>
+                                Dashboard
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link {% if '/panel/organizaciones/' in request.path %}active{% endif %}" href="{% url 'admin_organizaciones' %}">
+                                <i class="fas fa-building"></i>
+                                Organizaciones
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link {% if '/panel/usuarios/' in request.path %}active{% endif %}" href="{% url 'admin_usuarios' %}">
+                                <i class="fas fa-users"></i>
+                                Usuarios
+                            </a>
+                        </li>
+                    </ul>
+                    
+                    <h6 class="sidebar-heading mt-4">Sistema</h6>
+                    <ul class="nav flex-column">
+                        <li class="nav-item">
+                            <a class="nav-link" href="/admin/" target="_blank">
+                                <i class="fas fa-cogs"></i>
+                                Admin Django
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="{% url 'login' %}" target="_blank">
+                                <i class="fas fa-external-link-alt"></i>
+                                Ver sitio
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+            </nav>
+
+            <!-- Contenido principal -->
+            <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4">
+                {% block content %}
+                <!-- El contenido específico de cada página irá aquí -->
+                {% endblock %}
+            </main>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS y Popper.js -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- jQuery -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <!-- Chart.js para gráficos -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <script>
+        // Función para contraer/expandir el sidebar
+        document.addEventListener('DOMContentLoaded', function() {
+            const toggleSidebarBtn = document.getElementById('toggleSidebar');
+            const sidebar = document.querySelector('.sidebar');
+            const mainContent = document.querySelector('main');
+            
+            if (toggleSidebarBtn) {
+                toggleSidebarBtn.addEventListener('click', function() {
+                    sidebar.classList.toggle('sidebar-collapsed');
+                    mainContent.classList.toggle('col-md-12');
+                    mainContent.classList.toggle('col-lg-12');
+                });
+            }
+        });
+    </script>
+    
+    {% block extra_js %}{% endblock %}
+</body>
+</html>
