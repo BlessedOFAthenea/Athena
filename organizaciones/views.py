@@ -18,9 +18,14 @@ class OrganizacionLoginView(View):
         """
         Maneja las solicitudes GET mostrando el formulario de login.
         """
-        # Si el usuario ya está autenticado, redirigir al dashboard
+        # Si el usuario ya está autenticado, redirigir según su tipo
         if request.user.is_authenticated:
-            return redirect('dashboard')
+            if request.user.is_superuser:
+                return redirect('/panel/')
+            elif request.session.get('usuario_autenticado'):
+                return redirect('dashboard')
+            else:
+                return redirect('usuario_login_paso2', org_id=request.user.id)
         
         form = self.form_class()
         return render(request, self.template_name, {'form': form})
@@ -92,6 +97,10 @@ def dashboard(request):
     # Verificar que la organización esté autenticada
     if not request.user.is_authenticated:
         return redirect('login')
+    
+    # Si es superusuario, redirigir al panel de administración
+    if request.user.is_superuser:
+        return redirect('/panel/')
     
     # Verificar que el usuario interno también esté autenticado
     if not request.session.get('usuario_autenticado'):
@@ -276,6 +285,6 @@ class SuperUserLoginView(LoginView):
         """
         if request.user.is_authenticated:
             if request.user.is_superuser:
-                return redirect('admin:index')
+                return redirect('/panel/')
             return redirect('dashboard')
         return super().dispatch(request, *args, **kwargs)

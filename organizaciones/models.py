@@ -33,10 +33,18 @@ class Organizacion(AbstractUser):
     """
     username = None  # No usamos username, usamos email para login
     nombre = models.CharField(max_length=100, verbose_name="Nombre de la Organización")
+    nombre_encargado = models.CharField(max_length=100, default='', verbose_name="Nombre del Encargado")
+    tipo_giro = models.CharField(max_length=100, default='', verbose_name="Tipo de Giro")
     email = models.EmailField(unique=True, verbose_name="Correo Electrónico")
+    telefono = models.CharField(max_length=20, default='', verbose_name="Teléfono de Contacto")
+    rut = models.CharField(max_length=20, default='', verbose_name="RUT o Identificación Tributaria")
+    direccion = models.CharField(max_length=200, default='', verbose_name="Dirección Física")
+    comuna = models.CharField(max_length=100, default='', verbose_name="Comuna")
+    region = models.CharField(max_length=100, default='', verbose_name="Región")
     logo = models.ImageField(upload_to='logos/', null=True, blank=True, verbose_name="Logo")
     fecha_registro = models.DateTimeField(auto_now_add=True, verbose_name="Fecha de Registro")
-    activo = models.BooleanField(default=True, verbose_name="Activo")
+    fecha_creacion = models.DateTimeField(null=True, blank=True, verbose_name="Fecha de Creación")
+    activo = models.BooleanField(default=False, verbose_name="Activo")
     
     # Agregar related_name para evitar conflictos con User
     groups = models.ManyToManyField(

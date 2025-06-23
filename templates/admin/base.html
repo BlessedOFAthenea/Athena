@@ -87,17 +87,37 @@
             margin-left: -250px;
         }
         
+        .sidebar-collapsed + .container-fluid main {
+            margin-left: 0 !important;
+        }
+        
         @media (max-width: 767.98px) {
             .sidebar {
                 margin-left: -250px;
+                z-index: 1050;
             }
             
             .sidebar.show {
                 margin-left: 0;
+                box-shadow: 0 0 0 100vmax rgba(0,0,0,0.5);
             }
             
             main {
                 margin-left: 0 !important;
+            }
+        }
+        
+        /* Overlay para móvil */
+        @media (max-width: 767.98px) {
+            .sidebar.show::before {
+                content: '';
+                position: fixed;
+                top: 0;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                background: rgba(0,0,0,0.5);
+                z-index: -1;
             }
         }
     </style>
@@ -189,22 +209,7 @@
     <!-- Chart.js para gráficos -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     
-    <script>
-        // Función para contraer/expandir el sidebar
-        document.addEventListener('DOMContentLoaded', function() {
-            const toggleSidebarBtn = document.getElementById('toggleSidebar');
-            const sidebar = document.querySelector('.sidebar');
-            const mainContent = document.querySelector('main');
-            
-            if (toggleSidebarBtn) {
-                toggleSidebarBtn.addEventListener('click', function() {
-                    sidebar.classList.toggle('sidebar-collapsed');
-                    mainContent.classList.toggle('col-md-12');
-                    mainContent.classList.toggle('col-lg-12');
-                });
-            }
-        });
-    </script>
+
     
     {% block extra_js %}{% endblock %}
 </body>

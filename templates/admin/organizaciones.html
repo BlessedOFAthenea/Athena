@@ -6,13 +6,10 @@
 <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
     <h1 class="h2 text-white">Organizaciones</h1>
     <div class="btn-toolbar mb-2 mb-md-0">
-        <button type="button" id="toggleSidebar" class="btn btn-sm btn-outline-warning me-2">
-            <i class="fas fa-bars"></i> Toggle Sidebar
-        </button>
         <div class="btn-group me-2">
             <button type="button" class="btn btn-sm btn-outline-warning">Exportar</button>
         </div>
-        <button type="button" class="btn btn-warning">
+        <button type="button" class="btn btn-warning" data-bs-toggle="modal" data-bs-target="#modalNuevaOrganizacion">
             <i class="fas fa-plus"></i> Nueva Organización
         </button>
     </div>
@@ -85,14 +82,22 @@
                         </td>
                         <td>
                             <div class="btn-group">
-                                <button type="button" class="btn btn-sm btn-outline-warning">
+                                <button type="button" class="btn btn-sm btn-outline-warning" title="Editar">
                                     <i class="fas fa-edit"></i>
                                 </button>
-                                <button type="button" class="btn btn-sm btn-outline-danger">
-                                    <i class="fas fa-trash"></i>
+                                <button type="button" class="btn btn-sm btn-outline-secondary" title="Cambiar contraseña" onclick="abrirModalPassword({{ org.id }})">
+                                    <i class="fas fa-lock"></i>
                                 </button>
-                                <button type="button" class="btn btn-sm btn-outline-info">
+                                <button type="button" class="btn btn-sm {% if org.activo %}btn-outline-danger{% else %}btn-outline-success{% endif %}" 
+                                        title="{% if org.activo %}Deshabilitar{% else %}Habilitar{% endif %}" 
+                                        onclick="confirmarToggleEstado({{ org.id }}, '{{ org.nombre }}', {{ org.activo|yesno:'true,false' }})">
+                                    <i class="fas {% if org.activo %}fa-toggle-on{% else %}fa-toggle-off{% endif %}"></i>
+                                </button>
+                                <button type="button" class="btn btn-sm btn-outline-info" title="Ver detalles">
                                     <i class="fas fa-eye"></i>
+                                </button>
+                                <button type="button" class="btn btn-sm btn-outline-danger" title="Eliminar">
+                                    <i class="fas fa-trash"></i>
                                 </button>
                             </div>
                         </td>
@@ -122,4 +127,254 @@
         </nav>
     </div>
 </div>
+
+<!-- Modal Cambiar Contraseña -->
+<div class="modal fade" id="modalCambiarPassword" tabindex="-1" aria-labelledby="modalCambiarPasswordLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content bg-dark">
+            <div class="modal-header">
+                <h5 class="modal-title text-warning" id="modalCambiarPasswordLabel">
+                    <i class="fas fa-lock"></i> Cambiar Contraseña
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="formCambiarPassword">
+                {% csrf_token %}
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="nueva_password" class="form-label">Nueva Contraseña *</label>
+                        <div class="input-group">
+                            <input type="password" class="form-control" id="nueva_password" name="nueva_password" required minlength="8">
+                            <button class="btn btn-outline-secondary" type="button" onclick="togglePassword()">
+                                <i class="fas fa-eye" id="toggleIcon"></i>
+                            </button>
+                        </div>
+                        <small class="form-text text-muted">Mínimo 8 caracteres</small>
+                    </div>
+                    <div class="mb-3">
+                        <label for="confirmar_password" class="form-label">Confirmar Contraseña *</label>
+                        <input type="password" class="form-control" id="confirmar_password" name="confirmar_password" required minlength="8">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-warning">
+                        <i class="fas fa-save"></i> Cambiar Contraseña
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Confirmar Toggle Estado -->
+<div class="modal fade" id="modalConfirmarToggle" tabindex="-1" aria-labelledby="modalConfirmarToggleLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content bg-dark">
+            <div class="modal-header">
+                <h5 class="modal-title text-warning" id="modalConfirmarToggleLabel">
+                    <i class="fas fa-exclamation-triangle"></i> Confirmar Acción
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p id="mensajeConfirmacion"></p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-warning" id="btnConfirmarToggle">Confirmar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Nueva Organización -->
+<div class="modal fade" id="modalNuevaOrganizacion" tabindex="-1" aria-labelledby="modalNuevaOrganizacionLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content bg-dark">
+            <div class="modal-header">
+                <h5 class="modal-title text-warning" id="modalNuevaOrganizacionLabel">
+                    <i class="fas fa-building"></i> Nueva Organización
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="formNuevaOrganizacion">
+                {% csrf_token %}
+                <div class="modal-body">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="nombre" class="form-label">Nombre de la Organización *</label>
+                            <input type="text" class="form-control" id="nombre" name="nombre" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="nombre_encargado" class="form-label">Nombre del Encargado *</label>
+                            <input type="text" class="form-control" id="nombre_encargado" name="nombre_encargado" required>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="tipo_giro" class="form-label">Tipo de Giro *</label>
+                            <input type="text" class="form-control" id="tipo_giro" name="tipo_giro" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="email" class="form-label">Correo Electrónico *</label>
+                            <input type="email" class="form-control" id="email" name="email" required>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="telefono" class="form-label">Teléfono de Contacto *</label>
+                            <input type="text" class="form-control" id="telefono" name="telefono" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="rut" class="form-label">RUT o Identificación Tributaria *</label>
+                            <input type="text" class="form-control" id="rut" name="rut" required>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="direccion" class="form-label">Dirección Física *</label>
+                        <input type="text" class="form-control" id="direccion" name="direccion" required>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="comuna" class="form-label">Comuna *</label>
+                            <input type="text" class="form-control" id="comuna" name="comuna" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="region" class="form-label">Región *</label>
+                            <input type="text" class="form-control" id="region" name="region" required>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-warning">
+                        <i class="fas fa-save"></i> Crear Organización
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+let orgIdActual = null;
+
+// Modal Nueva Organización
+document.getElementById('formNuevaOrganizacion').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    const formData = new FormData(this);
+    const submitBtn = this.querySelector('button[type="submit"]');
+    const originalText = submitBtn.innerHTML;
+    
+    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Creando...';
+    submitBtn.disabled = true;
+    
+    fetch('{% url "crear_organizacion" %}', {
+        method: 'POST',
+        body: formData,
+        headers: {
+            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert('Organización creada exitosamente');
+            location.reload();
+        } else {
+            alert('Error: ' + JSON.stringify(data.errors));
+        }
+    })
+    .catch(error => {
+        alert('Error de conexión');
+    })
+    .finally(() => {
+        submitBtn.innerHTML = originalText;
+        submitBtn.disabled = false;
+    });
+});
+
+// Cambiar contraseña
+function abrirModalPassword(orgId) {
+    orgIdActual = orgId;
+    document.getElementById('formCambiarPassword').reset();
+    new bootstrap.Modal(document.getElementById('modalCambiarPassword')).show();
+}
+
+function togglePassword() {
+    const passwordField = document.getElementById('nueva_password');
+    const toggleIcon = document.getElementById('toggleIcon');
+    
+    if (passwordField.type === 'password') {
+        passwordField.type = 'text';
+        toggleIcon.classList.remove('fa-eye');
+        toggleIcon.classList.add('fa-eye-slash');
+    } else {
+        passwordField.type = 'password';
+        toggleIcon.classList.remove('fa-eye-slash');
+        toggleIcon.classList.add('fa-eye');
+    }
+}
+
+document.getElementById('formCambiarPassword').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    const password = document.getElementById('nueva_password').value;
+    const confirmar = document.getElementById('confirmar_password').value;
+    
+    if (password !== confirmar) {
+        alert('Las contraseñas no coinciden');
+        return;
+    }
+    
+    const formData = new FormData(this);
+    
+    fetch(`/panel/organizaciones/${orgIdActual}/password/`, {
+        method: 'POST',
+        body: formData,
+        headers: {
+            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        alert(data.message);
+        if (data.success) {
+            bootstrap.Modal.getInstance(document.getElementById('modalCambiarPassword')).hide();
+        }
+    });
+});
+
+// Toggle estado
+function confirmarToggleEstado(orgId, nombre, activo) {
+    orgIdActual = orgId;
+    const accion = activo ? 'deshabilitar' : 'habilitar';
+    document.getElementById('mensajeConfirmacion').textContent = 
+        `¿Está seguro de ${accion} la organización "${nombre}"?`;
+    
+    new bootstrap.Modal(document.getElementById('modalConfirmarToggle')).show();
+}
+
+document.getElementById('btnConfirmarToggle').addEventListener('click', function() {
+    fetch(`/panel/organizaciones/${orgIdActual}/toggle/`, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        alert(data.message);
+        if (data.success) {
+            location.reload();
+        }
+    });
+    
+    bootstrap.Modal.getInstance(document.getElementById('modalConfirmarToggle')).hide();
+});
+</script>
 {% endblock %}
