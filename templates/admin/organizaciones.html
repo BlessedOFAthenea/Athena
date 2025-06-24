@@ -82,7 +82,7 @@
                         </td>
                         <td>
                             <div class="btn-group">
-                                <button type="button" class="btn btn-sm btn-outline-warning" title="Editar">
+                                <button type="button" class="btn btn-sm btn-outline-warning" title="Editar" onclick="editarOrganizacion({{ org.id }})">
                                     <i class="fas fa-edit"></i>
                                 </button>
                                 <button type="button" class="btn btn-sm btn-outline-secondary" title="Cambiar contraseña" onclick="abrirModalPassword({{ org.id }})">
@@ -93,10 +93,10 @@
                                         onclick="confirmarToggleEstado({{ org.id }}, '{{ org.nombre }}', {{ org.activo|yesno:'true,false' }})">
                                     <i class="fas {% if org.activo %}fa-toggle-on{% else %}fa-toggle-off{% endif %}"></i>
                                 </button>
-                                <button type="button" class="btn btn-sm btn-outline-info" title="Ver detalles">
+                                <button type="button" class="btn btn-sm btn-outline-info" title="Ver detalles" onclick="verDetalles({{ org.id }})">
                                     <i class="fas fa-eye"></i>
                                 </button>
-                                <button type="button" class="btn btn-sm btn-outline-danger" title="Eliminar">
+                                <button type="button" class="btn btn-sm btn-outline-danger" title="Eliminar" onclick="confirmarEliminar({{ org.id }}, '{{ org.nombre }}')">
                                     <i class="fas fa-trash"></i>
                                 </button>
                             </div>
@@ -188,6 +188,143 @@
     </div>
 </div>
 
+<!-- Modal Confirmar Eliminar -->
+<div class="modal fade" id="modalConfirmarEliminar" tabindex="-1" aria-labelledby="modalConfirmarEliminarLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content bg-dark">
+            <div class="modal-header">
+                <h5 class="modal-title text-danger" id="modalConfirmarEliminarLabel">
+                    <i class="fas fa-exclamation-triangle"></i> Confirmar Eliminación
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p id="mensajeEliminar"></p>
+                <div class="alert alert-danger">
+                    <i class="fas fa-exclamation-circle"></i> Esta acción no se puede deshacer.
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-danger" id="btnConfirmarEliminar">Eliminar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Ver Detalles -->
+<div class="modal fade" id="modalDetalles" tabindex="-1" aria-labelledby="modalDetallesLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content bg-dark">
+            <div class="modal-header">
+                <h5 class="modal-title text-info" id="modalDetallesLabel">
+                    <i class="fas fa-info-circle"></i> Detalles de la Organización
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <p><strong>Nombre:</strong> <span id="detalle-nombre"></span></p>
+                        <p><strong>Email:</strong> <span id="detalle-email"></span></p>
+                        <p><strong>Encargado:</strong> <span id="detalle-encargado"></span></p>
+                        <p><strong>Teléfono:</strong> <span id="detalle-telefono"></span></p>
+                    </div>
+                    <div class="col-md-6">
+                        <p><strong>RUT:</strong> <span id="detalle-rut"></span></p>
+                        <p><strong>Dirección:</strong> <span id="detalle-direccion"></span></p>
+                        <p><strong>Comuna:</strong> <span id="detalle-comuna"></span></p>
+                        <p><strong>Región:</strong> <span id="detalle-region"></span></p>
+                    </div>
+                </div>
+                <hr>
+                <div class="row">
+                    <div class="col-md-6">
+                        <p><strong>Fecha de Registro:</strong> <span id="detalle-fecha"></span></p>
+                        <p><strong>Estado:</strong> <span id="detalle-estado"></span></p>
+                    </div>
+                    <div class="col-md-6">
+                        <p><strong>Usuarios:</strong> <span id="detalle-usuarios"></span></p>
+                        <p><strong>Tipo de Giro:</strong> <span id="detalle-giro"></span></p>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Editar Organización -->
+<div class="modal fade" id="modalEditarOrganizacion" tabindex="-1" aria-labelledby="modalEditarOrganizacionLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content bg-dark">
+            <div class="modal-header">
+                <h5 class="modal-title text-warning" id="modalEditarOrganizacionLabel">
+                    <i class="fas fa-edit"></i> Editar Organización
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="formEditarOrganizacion">
+                {% csrf_token %}
+                <div class="modal-body">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="edit-nombre" class="form-label">Nombre de la Organización *</label>
+                            <input type="text" class="form-control" id="edit-nombre" name="nombre" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="edit-nombre_encargado" class="form-label">Nombre del Encargado *</label>
+                            <input type="text" class="form-control" id="edit-nombre_encargado" name="nombre_encargado" required>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="edit-tipo_giro" class="form-label">Tipo de Giro *</label>
+                            <input type="text" class="form-control" id="edit-tipo_giro" name="tipo_giro" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="edit-email" class="form-label">Correo Electrónico *</label>
+                            <input type="email" class="form-control" id="edit-email" name="email" required>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="edit-telefono" class="form-label">Teléfono de Contacto *</label>
+                            <input type="text" class="form-control" id="edit-telefono" name="telefono" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="edit-rut" class="form-label">RUT o Identificación Tributaria *</label>
+                            <input type="text" class="form-control" id="edit-rut" name="rut" required>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="edit-direccion" class="form-label">Dirección Física *</label>
+                        <input type="text" class="form-control" id="edit-direccion" name="direccion" required>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="edit-comuna" class="form-label">Comuna *</label>
+                            <input type="text" class="form-control" id="edit-comuna" name="comuna" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="edit-region" class="form-label">Región *</label>
+                            <input type="text" class="form-control" id="edit-region" name="region" required>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-warning">
+                        <i class="fas fa-save"></i> Guardar Cambios
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
 <!-- Modal Nueva Organización -->
 <div class="modal fade" id="modalNuevaOrganizacion" tabindex="-1" aria-labelledby="modalNuevaOrganizacionLabel" aria-hidden="true">
     <div class="modal-dialog modal-lg">
@@ -256,11 +393,38 @@
         </div>
     </div>
 </div>
+
+<!-- Modal Alerta -->
+<div class="modal fade" id="modalAlerta" tabindex="-1" aria-labelledby="modalAlertaLabel" aria-hidden="true" data-bs-backdrop="static" data-bs-keyboard="false">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content bg-dark border-warning">
+            <div class="modal-header border-0 pb-0">
+                <h5 class="modal-title text-warning" id="modalAlertaLabel">
+                    <i class="fas fa-check-circle"></i> Confirmación
+                </h5>
+            </div>
+            <div class="modal-body text-center py-4">
+                <p id="mensajeAlerta" class="text-white mb-0 fs-6"></p>
+            </div>
+            <div class="modal-footer border-0 justify-content-center pt-0">
+                <button type="button" class="btn btn-warning px-4" data-bs-dismiss="modal">
+                    <i class="fas fa-check"></i> Aceptar
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
 {% endblock %}
 
 {% block extra_js %}
 <script>
 let orgIdActual = null;
+
+// Función para mostrar alerta personalizada
+function mostrarAlerta(mensaje) {
+    document.getElementById('mensajeAlerta').textContent = mensaje;
+    new bootstrap.Modal(document.getElementById('modalAlerta')).show();
+}
 
 // Modal Nueva Organización
 document.getElementById('formNuevaOrganizacion').addEventListener('submit', function(e) {
@@ -283,14 +447,14 @@ document.getElementById('formNuevaOrganizacion').addEventListener('submit', func
     .then(response => response.json())
     .then(data => {
         if (data.success) {
-            alert('Organización creada exitosamente');
-            location.reload();
+            mostrarAlerta('Organización creada exitosamente');
+            setTimeout(() => location.reload(), 1500);
         } else {
-            alert('Error: ' + JSON.stringify(data.errors));
+            mostrarAlerta('Error: ' + JSON.stringify(data.errors));
         }
     })
     .catch(error => {
-        alert('Error de conexión');
+        mostrarAlerta('Error de conexión');
     })
     .finally(() => {
         submitBtn.innerHTML = originalText;
@@ -327,7 +491,7 @@ document.getElementById('formCambiarPassword').addEventListener('submit', functi
     const confirmar = document.getElementById('confirmar_password').value;
     
     if (password !== confirmar) {
-        alert('Las contraseñas no coinciden');
+        mostrarAlerta('Las contraseñas no coinciden');
         return;
     }
     
@@ -342,7 +506,7 @@ document.getElementById('formCambiarPassword').addEventListener('submit', functi
     })
     .then(response => response.json())
     .then(data => {
-        alert(data.message);
+        mostrarAlerta(data.message);
         if (data.success) {
             bootstrap.Modal.getInstance(document.getElementById('modalCambiarPassword')).hide();
         }
@@ -368,13 +532,140 @@ document.getElementById('btnConfirmarToggle').addEventListener('click', function
     })
     .then(response => response.json())
     .then(data => {
-        alert(data.message);
+        mostrarAlerta(data.message);
         if (data.success) {
-            location.reload();
+            setTimeout(() => location.reload(), 1500);
         }
     });
     
     bootstrap.Modal.getInstance(document.getElementById('modalConfirmarToggle')).hide();
+});
+
+// Ver detalles
+function verDetalles(orgId) {
+    fetch(`/panel/organizaciones/${orgId}/detalles/`, {
+        method: 'GET',
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            const org = data.organizacion;
+            document.getElementById('detalle-nombre').textContent = org.nombre;
+            document.getElementById('detalle-email').textContent = org.email;
+            document.getElementById('detalle-encargado').textContent = org.nombre_encargado;
+            document.getElementById('detalle-telefono').textContent = org.telefono;
+            document.getElementById('detalle-rut').textContent = org.rut;
+            document.getElementById('detalle-direccion').textContent = org.direccion;
+            document.getElementById('detalle-comuna').textContent = org.comuna;
+            document.getElementById('detalle-region').textContent = org.region;
+            document.getElementById('detalle-fecha').textContent = org.fecha_registro;
+            document.getElementById('detalle-estado').textContent = org.activo ? 'Activo' : 'Inactivo';
+            document.getElementById('detalle-usuarios').textContent = org.usuarios_count;
+            document.getElementById('detalle-giro').textContent = org.tipo_giro;
+            
+            new bootstrap.Modal(document.getElementById('modalDetalles')).show();
+        } else {
+            mostrarAlerta('Error al cargar los detalles');
+        }
+    })
+    .catch(error => {
+        mostrarAlerta('Error de conexión');
+    });
+}
+
+// Editar organización
+function editarOrganizacion(orgId) {
+    orgIdActual = orgId;
+    
+    fetch(`/panel/organizaciones/${orgId}/detalles/`, {
+        method: 'GET',
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            const org = data.organizacion;
+            document.getElementById('edit-nombre').value = org.nombre;
+            document.getElementById('edit-email').value = org.email;
+            document.getElementById('edit-nombre_encargado').value = org.nombre_encargado;
+            document.getElementById('edit-telefono').value = org.telefono;
+            document.getElementById('edit-rut').value = org.rut;
+            document.getElementById('edit-direccion').value = org.direccion;
+            document.getElementById('edit-comuna').value = org.comuna;
+            document.getElementById('edit-region').value = org.region;
+            document.getElementById('edit-tipo_giro').value = org.tipo_giro;
+            
+            new bootstrap.Modal(document.getElementById('modalEditarOrganizacion')).show();
+        } else {
+            mostrarAlerta('Error al cargar los datos');
+        }
+    })
+    .catch(error => {
+        mostrarAlerta('Error de conexión');
+    });
+}
+
+document.getElementById('formEditarOrganizacion').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    const formData = new FormData(this);
+    
+    fetch(`/panel/organizaciones/${orgIdActual}/editar/`, {
+        method: 'POST',
+        body: formData,
+        headers: {
+            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            mostrarAlerta('Organización actualizada exitosamente');
+            setTimeout(() => location.reload(), 1500);
+        } else {
+            mostrarAlerta('Error: ' + JSON.stringify(data.errors));
+        }
+    })
+    .catch(error => {
+        mostrarAlerta('Error de conexión');
+    });
+});
+
+// Eliminar organización
+function confirmarEliminar(orgId, nombre) {
+    orgIdActual = orgId;
+    document.getElementById('mensajeEliminar').textContent = 
+        `¿Está seguro de eliminar la organización "${nombre}"?`;
+    
+    new bootstrap.Modal(document.getElementById('modalConfirmarEliminar')).show();
+}
+
+document.getElementById('btnConfirmarEliminar').addEventListener('click', function() {
+    fetch(`/panel/organizaciones/${orgIdActual}/eliminar/`, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            mostrarAlerta('Organización eliminada exitosamente');
+            setTimeout(() => location.reload(), 1500);
+        } else {
+            mostrarAlerta(data.message || 'Error al eliminar la organización');
+        }
+    })
+    .catch(error => {
+        mostrarAlerta('Error de conexión');
+    });
+    
+    bootstrap.Modal.getInstance(document.getElementById('modalConfirmarEliminar')).hide();
 });
 </script>
 {% endblock %}

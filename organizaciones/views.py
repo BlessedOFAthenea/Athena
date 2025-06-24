@@ -4,8 +4,11 @@ from django.contrib.auth.views import PasswordResetView, LoginView
 from django.urls import reverse_lazy
 from django.views import View
 from django.contrib.admin.forms import AdminAuthenticationForm
-from .forms import OrganizacionLoginForm, OrganizacionPasswordResetForm
-from .models import Organizacion
+from django.utils import timezone
+from django.http import JsonResponse
+from .forms import OrganizacionLoginForm, OrganizacionPasswordResetForm, CambiarPasswordForm
+from .models import Organizacion, Usuario
+import hashlib
 
 class OrganizacionLoginView(View):
     """
@@ -110,6 +113,15 @@ def dashboard(request):
     usuario_id = request.session.get('usuario_id')
     try:
         usuario = request.user.usuarios.get(id=usuario_id)
+        
+        # Verificar si se requiere cambio de contraseña
+        if usuario.cambio_password_requerido or usuario.password_temporal:
+            return redirect('cambiar_password_obligatorio')
+        
+        # Actualizar último login
+        usuario.ultimo_login = timezone.now()
+        usuario.save()
+        
     except:
         # Si no se encuentra el usuario, redirigir al login de usuario
         if 'usuario_autenticado' in request.session:
@@ -143,15 +155,15 @@ class UsuarioLoginView(View):
         """
         Maneja las solicitudes POST procesando el formulario de login.
         """
-        email = request.POST.get('email')
+        username = request.POST.get('username')
         password = request.POST.get('password')
         
         try:
             organizacion = Organizacion.objects.get(id=org_id)
             try:
-                usuario = organizacion.usuarios.get(email=email, activo=True)
+                usuario = organizacion.usuarios.get(username=username, activo=True)
                 # Verificar contraseña (en un sistema real usaríamos hash)
-                if usuario.password == password:
+                if usuario.password == hashlib.sha256(password.encode()).hexdigest():
                     # Guardar información del usuario en la sesión
                     request.session['usuario_id'] = usuario.id
                     request.session['usuario_nombre'] = f"{usuario.nombre} {usuario.apellido}"
@@ -202,19 +214,24 @@ class UsuarioLoginPaso2View(View):
             logout(request)
             return redirect('login')
         
-        email = request.POST.get('email')
+        username = request.POST.get('username')
         password = request.POST.get('password')
         
         try:
-            usuario = request.user.usuarios.get(email=email, activo=True)
+            usuario = request.user.usuarios.get(username=username, activo=True)
             # Verificar contraseña (en un sistema real usaríamos hash)
-            if usuario.password == password:
+            if usuario.password == hashlib.sha256(password.encode()).hexdigest():
                 # Guardar información del usuario en la sesión
                 request.session['usuario_id'] = usuario.id
                 request.session['usuario_nombre'] = f"{usuario.nombre} {usuario.apellido}"
                 request.session['organizacion_id'] = org_id
                 # Marcar que el usuario interno está autenticado
                 request.session['usuario_autenticado'] = True
+                
+                # Verificar si es la primera vez que inicia sesión (para admin)
+                if usuario.es_admin and usuario.cambio_password_requerido:
+                    return redirect('cambiar_password_obligatorio')
+                
                 return redirect('dashboard')
         except:
             pass
@@ -240,6 +257,15 @@ def usuario_dashboard(request):
     try:
         organizacion = Organizacion.objects.get(id=org_id)
         usuario = organizacion.usuarios.get(id=usuario_id)
+        
+        # Verificar si se requiere cambio de contraseña
+        if usuario.cambio_password_requerido or usuario.password_temporal:
+            return redirect('cambiar_password_obligatorio')
+        
+        # Actualizar último login
+        usuario.ultimo_login = timezone.now()
+        usuario.save()
+        
         return render(request, 'organizaciones/usuario_dashboard.html', {
             'usuario': usuario,
             'organizacion': organizacion
@@ -288,3 +314,73 @@ class SuperUserLoginView(LoginView):
                 return redirect('/panel/')
             return redirect('dashboard')
         return super().dispatch(request, *args, **kwargs)
+
+def cambiar_password_obligatorio(request):
+    """
+    Vista para cambio obligatorio de contraseña.
+    """
+    # Verificar si el usuario está autenticado
+    if 'usuario_id' not in request.session:
+        return redirect('login')
+    
+    # Obtener información del usuario
+    usuario_id = request.session['usuario_id']
+    org_id = request.session['organizacion_id']
+    
+    try:
+        organizacion = Organizacion.objects.get(id=org_id)
+        usuario = organizacion.usuarios.get(id=usuario_id)
+        
+        if request.method == 'POST':
+            form = CambiarPasswordForm(request.POST)
+            if form.is_valid():
+                # Verificar contraseña actual
+                password_actual = form.cleaned_data['password_actual']
+                if usuario.password != hashlib.sha256(password_actual.encode()).hexdigest():
+                    form.add_error('password_actual', 'Contraseña actual incorrecta')
+                else:
+                    # Actualizar contraseña
+                    nueva_password = form.cleaned_data['nueva_password']
+                    usuario.password = hashlib.sha256(nueva_password.encode()).hexdigest()
+                    usuario.cambio_password_requerido = False
+                    usuario.password_temporal = False
+                    usuario.save()
+                    
+                    return redirect('dashboard')
+        else:
+            form = CambiarPasswordForm()
+        
+        return render(request, 'organizaciones/cambiar_password.html', {
+            'form': form,
+            'usuario': usuario,
+            'obligatorio': True
+        })
+    except:
+        return redirect('login')
+
+def cambiar_password_admin(request, usuario_id):
+    """
+    Vista para que el superusuario cambie la contraseña de un usuario admin.
+    """
+    if not request.user.is_superuser:
+        return JsonResponse({'success': False, 'message': 'Acceso denegado'})
+    
+    if request.method == 'POST':
+        try:
+            usuario = Usuario.objects.get(id=usuario_id, es_admin=True)
+            nueva_password = request.POST.get('nueva_password')
+            
+            if len(nueva_password) < 8:
+                return JsonResponse({'success': False, 'message': 'La contraseña debe tener al menos 8 caracteres'})
+            
+            # Actualizar contraseña
+            usuario.password = hashlib.sha256(nueva_password.encode()).hexdigest()
+            usuario.cambio_password_requerido = True
+            usuario.password_temporal = True
+            usuario.save()
+            
+            return JsonResponse({'success': True, 'message': 'Contraseña actualizada exitosamente'})
+        except Usuario.DoesNotExist:
+            return JsonResponse({'success': False, 'message': 'Usuario no encontrado'})
+    
+    return JsonResponse({'success': False, 'message': 'Método no permitido'})

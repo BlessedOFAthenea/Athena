@@ -45,6 +45,7 @@ class Organizacion(AbstractUser):
     fecha_registro = models.DateTimeField(auto_now_add=True, verbose_name="Fecha de Registro")
     fecha_creacion = models.DateTimeField(null=True, blank=True, verbose_name="Fecha de Creación")
     activo = models.BooleanField(default=False, verbose_name="Activo")
+    db_name = models.CharField(max_length=100, null=True, blank=True, verbose_name="Nombre de Base de Datos")
     
     # Agregar related_name para evitar conflictos con User
     groups = models.ManyToManyField(
@@ -83,15 +84,23 @@ class Usuario(models.Model):
     organizacion = models.ForeignKey(Organizacion, on_delete=models.CASCADE, related_name='usuarios', verbose_name="Organización")
     nombre = models.CharField(max_length=100, verbose_name="Nombre")
     apellido = models.CharField(max_length=100, verbose_name="Apellido")
+    username = models.CharField(max_length=50, verbose_name="Nombre de Usuario")
     email = models.EmailField(verbose_name="Correo Electrónico")
     password = models.CharField(max_length=128, verbose_name="Contraseña")
     activo = models.BooleanField(default=True, verbose_name="Activo")
     fecha_registro = models.DateTimeField(auto_now_add=True, verbose_name="Fecha de Registro")
+    es_admin = models.BooleanField(default=False, verbose_name="Es Administrador")
+    cambio_password_requerido = models.BooleanField(default=False, verbose_name="Cambio de Contraseña Requerido")
+    password_temporal = models.BooleanField(default=False, verbose_name="Contraseña Temporal")
+    ultimo_login = models.DateTimeField(null=True, blank=True, verbose_name="Último Login")
     
     class Meta:
         verbose_name = "Usuario"
         verbose_name_plural = "Usuarios"
-        unique_together = ['organizacion', 'email']  # Email único por organización
+        unique_together = [
+            ['organizacion', 'email'],  # Email único por organización
+            ['organizacion', 'username']  # Username único por organización
+        ]
     
     def __str__(self):
-        return f"{self.nombre} {self.apellido} - {self.organizacion.nombre}"
+        return f"{self.username} ({self.nombre} {self.apellido}) - {self.organizacion.nombre}"

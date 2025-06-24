@@ -17,6 +17,7 @@ urlpatterns = [
     path('organizacion/<int:org_id>/usuario-login/', views.UsuarioLoginPaso2View.as_view(), name='usuario_login_paso2'),
     path('usuario/dashboard/', views.usuario_dashboard, name='usuario_dashboard'),
     path('usuario/logout/', views.usuario_logout, name='usuario_logout'),
+    path('usuario/cambiar-password/', views.cambiar_password_obligatorio, name='cambiar_password_obligatorio'),
     
     # URLs para la recuperación de contraseña
     path('password-reset/', views.OrganizacionPasswordResetView.as_view(), name='password_reset'),

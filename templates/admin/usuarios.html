@@ -9,45 +9,41 @@
         <div class="btn-group me-2">
             <button type="button" class="btn btn-sm btn-outline-warning">Exportar</button>
         </div>
-        <button type="button" class="btn btn-warning">
+        <button type="button" class="btn btn-warning" id="btnNuevoUsuario" {% if not organizacion_seleccionada %}disabled{% endif %}>
             <i class="fas fa-plus"></i> Nuevo Usuario
         </button>
     </div>
 </div>
 
-<!-- Filtros -->
+<!-- Selector de Organización -->
 <div class="row mb-4">
     <div class="col-md-12">
         <div class="card shadow">
             <div class="card-body">
-                <form class="row g-3">
-                    <div class="col-md-3">
-                        <label for="nombre" class="form-label">Nombre</label>
-                        <input type="text" class="form-control" id="nombre" placeholder="Buscar por nombre">
-                    </div>
-                    <div class="col-md-3">
-                        <label for="email" class="form-label">Email</label>
-                        <input type="email" class="form-control" id="email" placeholder="Buscar por email">
-                    </div>
-                    <div class="col-md-2">
-                        <label for="organizacion" class="form-label">Organización</label>
-                        <select class="form-select" id="organizacion">
-                            <option value="">Todas</option>
-                            {% for org in organizaciones %}
-                            <option value="{{ org.id }}">{{ org.nombre }}</option>
-                            {% endfor %}
-                        </select>
-                    </div>
-                    <div class="col-md-2">
-                        <label for="estado" class="form-label">Estado</label>
-                        <select class="form-select" id="estado">
-                            <option value="">Todos</option>
-                            <option value="1">Activos</option>
-                            <option value="0">Inactivos</option>
-                        </select>
-                    </div>
-                    <div class="col-md-2 d-flex align-items-end">
-                        <button type="submit" class="btn btn-primary w-100">Filtrar</button>
+                <form id="formSeleccionarOrganizacion" method="get" action="{% url 'admin_usuarios' %}">
+                    <div class="row align-items-end">
+                        <div class="col-md-6">
+                            <label for="organizacion" class="form-label">Seleccionar Organización</label>
+                            <select class="form-select" id="organizacion" name="organizacion" onchange="this.form.submit()">
+                                <option value="">-- Seleccione una organización --</option>
+                                {% for org in organizaciones %}
+                                <option value="{{ org.id }}" {% if organizacion_seleccionada.id == org.id %}selected{% endif %}>
+                                    {{ org.nombre }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            {% if organizacion_seleccionada %}
+                            <div class="alert alert-info mb-0">
+                                <strong>Organización seleccionada:</strong> {{ organizacion_seleccionada.nombre }}
+                            </div>
+                            {% else %}
+                            <div class="alert alert-warning mb-0">
+                                <strong>Seleccione una organización</strong> para ver y gestionar sus usuarios.
+                            </div>
+                            {% endif %}
+                        </div>
                     </div>
                 </form>
             </div>
@@ -57,20 +53,31 @@
 
 <!-- Tabla de usuarios -->
 <div class="card shadow mb-4">
-    <div class="card-header py-3">
-        <h6 class="m-0 font-weight-bold text-primary">Listado de Usuarios</h6>
+    <div class="card-header py-3 d-flex justify-content-between align-items-center">
+        <h6 class="m-0 font-weight-bold text-primary">
+            {% if organizacion_seleccionada %}
+            Usuarios de {{ organizacion_seleccionada.nombre }}
+            {% else %}
+            Listado de Usuarios
+            {% endif %}
+        </h6>
+        {% if organizacion_seleccionada %}
+        <button class="btn btn-sm btn-warning" id="btnNuevoUsuarioFloat">
+            <i class="fas fa-plus"></i> Nuevo Usuario
+        </button>
+        {% endif %}
     </div>
     <div class="card-body">
+        {% if organizacion_seleccionada %}
         <div class="table-responsive">
             <table class="table table-dark table-striped table-hover">
                 <thead>
                     <tr>
                         <th>ID</th>
-                        <th>Nombre</th>
+                        <th>Nombre Completo</th>
+                        <th>Nombre de Usuario</th>
                         <th>Email</th>
-                        <th>Organización</th>
-                        <th>Rol</th>
-                        <th>Fecha Registro</th>
+                        <th>Tipo</th>
                         <th>Estado</th>
                         <th>Acciones</th>
                     </tr>
@@ -80,8 +87,8 @@
                     <tr>
                         <td>{{ usuario.id }}</td>
                         <td>{{ usuario.nombre }} {{ usuario.apellido }}</td>
+                        <td>{{ usuario.username }}</td>
                         <td>{{ usuario.email }}</td>
-                        <td>{{ usuario.organizacion.nombre }}</td>
                         <td>
                             {% if usuario.es_admin %}
                             <span class="badge bg-warning">Admin</span>
@@ -89,7 +96,6 @@
                             <span class="badge bg-info">Usuario</span>
                             {% endif %}
                         </td>
-                        <td>{{ usuario.fecha_registro|date:"d/m/Y H:i" }}</td>
                         <td>
                             {% if usuario.activo %}
                             <span class="badge bg-success">Activo</span>
@@ -99,22 +105,21 @@
                         </td>
                         <td>
                             <div class="btn-group">
-                                <button type="button" class="btn btn-sm btn-outline-warning" title="Editar">
+                                <button type="button" class="btn btn-sm btn-outline-warning" title="Editar" onclick="editarUsuario({{ usuario.id }})">
                                     <i class="fas fa-edit"></i>
                                 </button>
-                                <button type="button" class="btn btn-sm btn-outline-info" title="Ver detalles">
+                                <button type="button" class="btn btn-sm btn-outline-secondary" title="Restablecer contraseña" onclick="restablecerPassword({{ usuario.id }})">
+                                    <i class="fas fa-key"></i>
+                                </button>
+                                <button type="button" class="btn btn-sm btn-outline-info" title="Ver detalles" onclick="verDetallesUsuario({{ usuario.id }})">
                                     <i class="fas fa-eye"></i>
                                 </button>
-                                {% if usuario.activo %}
-                                <button type="button" class="btn btn-sm btn-outline-secondary" title="Suspender">
-                                    <i class="fas fa-pause"></i>
+                                <button type="button" class="btn btn-sm {% if usuario.activo %}btn-outline-danger{% else %}btn-outline-success{% endif %}" 
+                                        title="{% if usuario.activo %}Desactivar{% else %}Activar{% endif %}" 
+                                        onclick="toggleEstadoUsuario({{ usuario.id }}, '{{ usuario.nombre }} {{ usuario.apellido }}', {{ usuario.activo|yesno:'true,false' }})">
+                                    <i class="fas {% if usuario.activo %}fa-toggle-on{% else %}fa-toggle-off{% endif %}"></i>
                                 </button>
-                                {% else %}
-                                <button type="button" class="btn btn-sm btn-outline-success" title="Activar">
-                                    <i class="fas fa-play"></i>
-                                </button>
-                                {% endif %}
-                                <button type="button" class="btn btn-sm btn-outline-danger" title="Eliminar">
+                                <button type="button" class="btn btn-sm btn-outline-danger" title="Eliminar" onclick="confirmarEliminarUsuario({{ usuario.id }}, '{{ usuario.nombre }} {{ usuario.apellido }}')">
                                     <i class="fas fa-trash"></i>
                                 </button>
                             </div>
@@ -122,27 +127,516 @@
                     </tr>
                     {% empty %}
                     <tr>
-                        <td colspan="8" class="text-center">No hay usuarios registrados</td>
+                        <td colspan="7" class="text-center">No hay usuarios registrados en esta organización</td>
                     </tr>
                     {% endfor %}
                 </tbody>
             </table>
         </div>
-        
-        <!-- Paginación -->
-        <nav aria-label="Paginación de usuarios">
-            <ul class="pagination justify-content-center mt-4">
-                <li class="page-item disabled">
-                    <a class="page-link" href="#" tabindex="-1" aria-disabled="true">Anterior</a>
-                </li>
-                <li class="page-item active"><a class="page-link" href="#">1</a></li>
-                <li class="page-item"><a class="page-link" href="#">2</a></li>
-                <li class="page-item"><a class="page-link" href="#">3</a></li>
-                <li class="page-item">
-                    <a class="page-link" href="#">Siguiente</a>
-                </li>
-            </ul>
-        </nav>
+        {% else %}
+        <div class="alert alert-info">
+            <i class="fas fa-info-circle"></i> Seleccione una organización para ver sus usuarios.
+        </div>
+        {% endif %}
     </div>
 </div>
+
+<!-- Modal Nuevo Usuario -->
+<div class="modal fade" id="modalNuevoUsuario" tabindex="-1" aria-labelledby="modalNuevoUsuarioLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content bg-dark">
+            <div class="modal-header">
+                <h5 class="modal-title text-warning" id="modalNuevoUsuarioLabel">
+                    <i class="fas fa-user-plus"></i> Nuevo Usuario
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="formNuevoUsuario">
+                {% csrf_token %}
+                <div class="modal-body">
+                    <input type="hidden" id="organizacion_id" name="organizacion" value="{{ organizacion_seleccionada.id }}">
+                    
+                    <div class="mb-3">
+                        <label for="nombre" class="form-label">Nombre *</label>
+                        <input type="text" class="form-control" id="nombre" name="nombre" required>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="apellido" class="form-label">Apellido *</label>
+                        <input type="text" class="form-control" id="apellido" name="apellido" required>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="username" class="form-label">Nombre de Usuario *</label>
+                        <input type="text" class="form-control" id="username" name="username" required>
+                        <small class="form-text text-muted">Debe ser único dentro de la organización</small>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="email" class="form-label">Email *</label>
+                        <input type="email" class="form-control" id="email" name="email" required>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="password" class="form-label">Contraseña *</label>
+                        <input type="password" class="form-control" id="password" name="password" required minlength="8">
+                        <small class="form-text text-muted">Mínimo 8 caracteres</small>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="es_admin" name="es_admin">
+                            <label class="form-check-label" for="es_admin">
+                                Usuario Administrador
+                            </label>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-warning">
+                        <i class="fas fa-save"></i> Crear Usuario
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Editar Usuario -->
+<div class="modal fade" id="modalEditarUsuario" tabindex="-1" aria-labelledby="modalEditarUsuarioLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content bg-dark">
+            <div class="modal-header">
+                <h5 class="modal-title text-warning" id="modalEditarUsuarioLabel">
+                    <i class="fas fa-user-edit"></i> Editar Usuario
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="formEditarUsuario">
+                {% csrf_token %}
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="edit-nombre" class="form-label">Nombre *</label>
+                        <input type="text" class="form-control" id="edit-nombre" name="nombre" required>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="edit-apellido" class="form-label">Apellido *</label>
+                        <input type="text" class="form-control" id="edit-apellido" name="apellido" required>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="edit-username" class="form-label">Nombre de Usuario *</label>
+                        <input type="text" class="form-control" id="edit-username" name="username" required>
+                        <small class="form-text text-muted">Debe ser único dentro de la organización</small>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="edit-email" class="form-label">Email *</label>
+                        <input type="email" class="form-control" id="edit-email" name="email" required>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="edit-es_admin" name="es_admin">
+                            <label class="form-check-label" for="edit-es_admin">
+                                Usuario Administrador
+                            </label>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-warning">
+                        <i class="fas fa-save"></i> Guardar Cambios
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Restablecer Contraseña -->
+<div class="modal fade" id="modalRestablecerPassword" tabindex="-1" aria-labelledby="modalRestablecerPasswordLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content bg-dark">
+            <div class="modal-header">
+                <h5 class="modal-title text-warning" id="modalRestablecerPasswordLabel">
+                    <i class="fas fa-key"></i> Restablecer Contraseña
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="formRestablecerPassword">
+                {% csrf_token %}
+                <div class="modal-body">
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle"></i> Se establecerá una contraseña temporal que el usuario deberá cambiar en su próximo inicio de sesión.
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="nueva_password" class="form-label">Nueva Contraseña *</label>
+                        <input type="password" class="form-control" id="nueva_password" name="nueva_password" required minlength="8">
+                        <small class="form-text text-muted">Mínimo 8 caracteres</small>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="confirmar_password" class="form-label">Confirmar Contraseña *</label>
+                        <input type="password" class="form-control" id="confirmar_password" name="confirmar_password" required minlength="8">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-warning">
+                        <i class="fas fa-save"></i> Restablecer Contraseña
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Ver Detalles Usuario -->
+<div class="modal fade" id="modalDetallesUsuario" tabindex="-1" aria-labelledby="modalDetallesUsuarioLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content bg-dark">
+            <div class="modal-header">
+                <h5 class="modal-title text-info" id="modalDetallesUsuarioLabel">
+                    <i class="fas fa-user"></i> Detalles del Usuario
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <p><strong>Nombre:</strong> <span id="detalle-nombre"></span></p>
+                        <p><strong>Apellido:</strong> <span id="detalle-apellido"></span></p>
+                        <p><strong>Nombre de Usuario:</strong> <span id="detalle-username"></span></p>
+                        <p><strong>Email:</strong> <span id="detalle-email"></span></p>
+                    </div>
+                    <div class="col-md-6">
+                        <p><strong>Tipo:</strong> <span id="detalle-tipo"></span></p>
+                        <p><strong>Estado:</strong> <span id="detalle-estado"></span></p>
+                        <p><strong>Fecha de Registro:</strong> <span id="detalle-fecha"></span></p>
+                        <p><strong>Organización:</strong> <span id="detalle-organizacion"></span></p>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Confirmar Eliminar Usuario -->
+<div class="modal fade" id="modalConfirmarEliminar" tabindex="-1" aria-labelledby="modalConfirmarEliminarLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content bg-dark">
+            <div class="modal-header">
+                <h5 class="modal-title text-danger" id="modalConfirmarEliminarLabel">
+                    <i class="fas fa-exclamation-triangle"></i> Confirmar Eliminación
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p id="mensajeEliminar"></p>
+                <div class="alert alert-danger">
+                    <i class="fas fa-exclamation-circle"></i> Esta acción no se puede deshacer.
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-danger" id="btnConfirmarEliminar">Eliminar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Confirmar Toggle Estado -->
+<div class="modal fade" id="modalConfirmarToggleUsuario" tabindex="-1" aria-labelledby="modalConfirmarToggleUsuarioLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content bg-dark">
+            <div class="modal-header">
+                <h5 class="modal-title text-warning" id="modalConfirmarToggleUsuarioLabel">
+                    <i class="fas fa-exclamation-triangle"></i> Confirmar Acción
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p id="mensajeToggle"></p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-warning" id="btnConfirmarToggle">Confirmar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Alerta -->
+<div class="modal fade" id="modalAlerta" tabindex="-1" aria-labelledby="modalAlertaLabel" aria-hidden="true" data-bs-backdrop="static" data-bs-keyboard="false">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content bg-dark border-warning">
+            <div class="modal-header border-0 pb-0">
+                <h5 class="modal-title text-warning" id="modalAlertaLabel">
+                    <i class="fas fa-check-circle"></i> Confirmación
+                </h5>
+            </div>
+            <div class="modal-body text-center py-4">
+                <p id="mensajeAlerta" class="text-white mb-0 fs-6"></p>
+            </div>
+            <div class="modal-footer border-0 justify-content-center pt-0">
+                <button type="button" class="btn btn-warning px-4" data-bs-dismiss="modal">
+                    <i class="fas fa-check"></i> Aceptar
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+let usuarioIdActual = null;
+
+// Función para mostrar alerta personalizada
+function mostrarAlerta(mensaje) {
+    document.getElementById('mensajeAlerta').textContent = mensaje;
+    new bootstrap.Modal(document.getElementById('modalAlerta')).show();
+}
+
+// Abrir modal de nuevo usuario
+document.getElementById('btnNuevoUsuario').addEventListener('click', function() {
+    document.getElementById('formNuevoUsuario').reset();
+    new bootstrap.Modal(document.getElementById('modalNuevoUsuario')).show();
+});
+
+// Botón flotante para nuevo usuario
+if (document.getElementById('btnNuevoUsuarioFloat')) {
+    document.getElementById('btnNuevoUsuarioFloat').addEventListener('click', function() {
+        document.getElementById('formNuevoUsuario').reset();
+        new bootstrap.Modal(document.getElementById('modalNuevoUsuario')).show();
+    });
+}
+
+// Crear nuevo usuario
+document.getElementById('formNuevoUsuario').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    const formData = new FormData(this);
+    const submitBtn = this.querySelector('button[type="submit"]');
+    const originalText = submitBtn.innerHTML;
+    
+    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Creando...';
+    submitBtn.disabled = true;
+    
+    fetch('{% url "crear_usuario" %}', {
+        method: 'POST',
+        body: formData,
+        headers: {
+            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            mostrarAlerta('Usuario creado exitosamente');
+            setTimeout(() => location.reload(), 1500);
+        } else {
+            mostrarAlerta('Error: ' + data.message);
+        }
+    })
+    .catch(error => {
+        mostrarAlerta('Error de conexión');
+    })
+    .finally(() => {
+        submitBtn.innerHTML = originalText;
+        submitBtn.disabled = false;
+    });
+});
+
+// Ver detalles de usuario
+function verDetallesUsuario(usuarioId) {
+    fetch(`/panel/usuarios/${usuarioId}/detalles/`, {
+        method: 'GET',
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            const usuario = data.usuario;
+            document.getElementById('detalle-nombre').textContent = usuario.nombre;
+            document.getElementById('detalle-apellido').textContent = usuario.apellido;
+            document.getElementById('detalle-username').textContent = usuario.username;
+            document.getElementById('detalle-email').textContent = usuario.email;
+            document.getElementById('detalle-tipo').textContent = usuario.es_admin ? 'Administrador' : 'Usuario';
+            document.getElementById('detalle-estado').textContent = usuario.activo ? 'Activo' : 'Inactivo';
+            document.getElementById('detalle-fecha').textContent = usuario.fecha_registro;
+            document.getElementById('detalle-organizacion').textContent = usuario.organizacion.nombre;
+            
+            new bootstrap.Modal(document.getElementById('modalDetallesUsuario')).show();
+        } else {
+            mostrarAlerta('Error al cargar los detalles');
+        }
+    })
+    .catch(error => {
+        mostrarAlerta('Error de conexión');
+    });
+}
+
+// Editar usuario
+function editarUsuario(usuarioId) {
+    usuarioIdActual = usuarioId;
+    
+    fetch(`/panel/usuarios/${usuarioId}/detalles/`, {
+        method: 'GET',
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            const usuario = data.usuario;
+            document.getElementById('edit-nombre').value = usuario.nombre;
+            document.getElementById('edit-apellido').value = usuario.apellido;
+            document.getElementById('edit-username').value = usuario.username;
+            document.getElementById('edit-email').value = usuario.email;
+            document.getElementById('edit-es_admin').checked = usuario.es_admin;
+            
+            new bootstrap.Modal(document.getElementById('modalEditarUsuario')).show();
+        } else {
+            mostrarAlerta('Error al cargar los datos');
+        }
+    })
+    .catch(error => {
+        mostrarAlerta('Error de conexión');
+    });
+}
+
+document.getElementById('formEditarUsuario').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    const formData = new FormData(this);
+    
+    fetch(`/panel/usuarios/${usuarioIdActual}/editar/`, {
+        method: 'POST',
+        body: formData,
+        headers: {
+            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            mostrarAlerta('Usuario actualizado exitosamente');
+            setTimeout(() => location.reload(), 1500);
+        } else {
+            mostrarAlerta('Error: ' + data.message);
+        }
+    })
+    .catch(error => {
+        mostrarAlerta('Error de conexión');
+    });
+});
+
+// Restablecer contraseña
+function restablecerPassword(usuarioId) {
+    usuarioIdActual = usuarioId;
+    document.getElementById('formRestablecerPassword').reset();
+    new bootstrap.Modal(document.getElementById('modalRestablecerPassword')).show();
+}
+
+document.getElementById('formRestablecerPassword').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    const password = document.getElementById('nueva_password').value;
+    const confirmar = document.getElementById('confirmar_password').value;
+    
+    if (password !== confirmar) {
+        mostrarAlerta('Las contraseñas no coinciden');
+        return;
+    }
+    
+    const formData = new FormData(this);
+    
+    fetch(`/panel/usuarios/${usuarioIdActual}/password/`, {
+        method: 'POST',
+        body: formData,
+        headers: {
+            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        mostrarAlerta(data.message);
+        if (data.success) {
+            bootstrap.Modal.getInstance(document.getElementById('modalRestablecerPassword')).hide();
+        }
+    });
+});
+
+// Eliminar usuario
+function confirmarEliminarUsuario(usuarioId, nombre) {
+    usuarioIdActual = usuarioId;
+    document.getElementById('mensajeEliminar').textContent = 
+        `¿Está seguro de eliminar al usuario "${nombre}"?`;
+    
+    new bootstrap.Modal(document.getElementById('modalConfirmarEliminar')).show();
+}
+
+document.getElementById('btnConfirmarEliminar').addEventListener('click', function() {
+    fetch(`/panel/usuarios/${usuarioIdActual}/eliminar/`, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            mostrarAlerta('Usuario eliminado exitosamente');
+            setTimeout(() => location.reload(), 1500);
+        } else {
+            mostrarAlerta(data.message || 'Error al eliminar el usuario');
+        }
+    })
+    .catch(error => {
+        mostrarAlerta('Error de conexión');
+    });
+    
+    bootstrap.Modal.getInstance(document.getElementById('modalConfirmarEliminar')).hide();
+});
+
+// Toggle estado usuario
+function toggleEstadoUsuario(usuarioId, nombre, activo) {
+    usuarioIdActual = usuarioId;
+    const accion = activo ? 'desactivar' : 'activar';
+    document.getElementById('mensajeToggle').textContent = 
+        `¿Está seguro de ${accion} al usuario "${nombre}"?`;
+    
+    new bootstrap.Modal(document.getElementById('modalConfirmarToggleUsuario')).show();
+}
+
+document.getElementById('btnConfirmarToggle').addEventListener('click', function() {
+    fetch(`/panel/usuarios/${usuarioIdActual}/toggle/`, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        mostrarAlerta(data.message);
+        if (data.success) {
+            setTimeout(() => location.reload(), 1500);
+        }
+    });
+    
+    bootstrap.Modal.getInstance(document.getElementById('modalConfirmarToggleUsuario')).hide();
+});
+</script>
 {% endblock %}
